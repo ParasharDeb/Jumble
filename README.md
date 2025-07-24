@@ -50,9 +50,3 @@ git clone https://github.com/ParasharDeb/Jumble
 - `pnpm dlx prisma studio` — Prisma Studio (database GUI)
 - `pnpm dlx prisma migrate dev` — Run DB migrations
 
-## Best Practices
-
-- Store resumes and files in external cloud storage, saving only URLs in the database.
-- Use Prisma for type-safe relational modeling across the platform.
-- Extend the schema with audit trails and metadata as the platform grows.
-
