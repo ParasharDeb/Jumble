@@ -1,3 +1,4 @@
+
 # Jumble
 
 Jumble is a modern, full-stack job application platform where users can showcase portfolios, apply to jobs with one swipe, and connect tech projects—all with a beautiful, performant UI.
@@ -50,4 +51,4 @@ git clone https://github.com/ParasharDeb/Jumble
 - `pnpm dlx prisma studio` — Prisma Studio (database GUI)
 - `pnpm dlx prisma migrate dev` — Run DB migrations
 
-Hope you have a good time using the app
+>>>>>>> d7487ff0fcf85a679ad103dce05e0e998138fad3
