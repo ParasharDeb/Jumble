@@ -1,7 +1,10 @@
 import express, { Router } from 'express'
 import { middleware } from './middleware'
-import { SignupSchema } from './types'
+import bcrypt from 'bcrypt'
+import jwt from "jsonwebtoken"
+import { SignupSchema, SinginSchema } from './types'
 import { prismaclient } from '@repo/db/client'
+import { JWT_SECRET } from '@repo/backend-common/config'
 export const userroutes:Router=express.Router()
 userroutes.post("/signup",async(req,res)=>{
     const parseddata=SignupSchema.safeParse(req.body)
@@ -22,19 +25,50 @@ userroutes.post("/signup",async(req,res)=>{
         })
         return
     } 
-    // need logic to convert the resume pdf to link
+    const hashedpaasword=await bcrypt.hash(parseddata.data.password,10)
+    //TODO:need logic to convert the resume pdf to link
     await prismaclient.user.create({
         data:{
             email:parseddata.data.email,
-            password:parseddata.data.password,
+            password:hashedpaasword,
             username:parseddata.data.username,
             resumeUrl:parseddata.data.resume,
             portfolio:parseddata.data.portfolio
         }
     })
 })
-userroutes.post("/signin",(req,res)=>{
-    //signin logic here
+userroutes.post("/signin",async(req,res)=>{
+    const parseddata=SinginSchema.safeParse(req.body)
+    if(!parseddata.success){
+        res.json({
+            message:"invalid input"
+        })
+        return
+    }
+    const user =await prismaclient.user.findFirst({
+        where:{
+            email:parseddata.data.email
+        }
+    })
+    if(!user){
+        res.json({
+            message:"incorrect email"
+        })
+        return
+    }
+    const correctpass=await bcrypt.compare(user.password,parseddata.data.password);
+    if(!correctpass){
+        res.json({
+            message:"incorrect password"
+        })
+        return
+    }
+    const token = jwt.sign({
+        userId:user.id
+    },JWT_SECRET)
+    res.json({
+        token:token
+    })
 })
 userroutes.put("/changepassword",middleware,(req,res)=>{
     //changing password logic
