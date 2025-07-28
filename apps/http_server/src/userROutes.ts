@@ -5,6 +5,7 @@ import jwt from "jsonwebtoken"
 import { SignupSchema, SinginSchema, updatePasswordSchema } from './types'
 import { prismaclient } from '@repo/db/client'
 import { JWT_SECRET } from '@repo/backend-common/config'
+import { email } from 'zod'
 export const userroutes:Router=express.Router()
 interface Authrequest extends Request{
     userId:number
@@ -124,8 +125,30 @@ userroutes.put("/changepassword",middleware,async(req,res)=>{
 //     // description and techstack logic 
 //     //***should merge with signup endpoint or change the db */
 // })
-userroutes.get("/profile",middleware,(req,res)=>{
-    //see user profile
+userroutes.get("/profile",middleware,async(req,res)=>{
+    const userId=(req as Authrequest).userId    
+    if(!userId){
+        res.json({
+            message:"Unauthorized"
+        })
+        return
+    }
+    const user = await prismaclient.user.findFirst({
+        where:{
+            id:userId
+        }
+    })
+    if(!user){
+        res.json({
+            message:"You are not Signed in"
+        })
+    }
+    res.json({
+        username:user?.username,
+        email:user?.email,
+        portfolio:user?.portfolio
+        //TODO: SHOULD ALSO HAVE THE PROJECTS SHOWING OPTION NEED TO FIGURE THAT OUT SOMEHOW
+    })
 })
 userroutes.post("/upload_resume",middleware,(req,res)=>{
     //multer logic to upload resume
