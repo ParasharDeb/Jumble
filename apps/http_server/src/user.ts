@@ -1,11 +1,14 @@
-import express, { Router } from 'express'
+import express, { Request, Router } from 'express'
 import { middleware } from './middleware'
 import bcrypt from 'bcrypt'
 import jwt from "jsonwebtoken"
-import { SignupSchema, SinginSchema } from './types'
+import { SignupSchema, SinginSchema, updatePasswordSchema } from './types'
 import { prismaclient } from '@repo/db/client'
 import { JWT_SECRET } from '@repo/backend-common/config'
 export const userroutes:Router=express.Router()
+interface Authrequest extends Request{
+    userId:number
+}
 userroutes.post("/signup",async(req,res)=>{
     const parseddata=SignupSchema.safeParse(req.body)
     if(!parseddata.success){
@@ -70,8 +73,52 @@ userroutes.post("/signin",async(req,res)=>{
         token:token
     })
 })
-userroutes.put("/changepassword",middleware,(req,res)=>{
-    //changing password logic
+
+userroutes.put("/changepassword",middleware,async(req,res)=>{
+    const userId= (req as Authrequest).userId 
+    const parseddata=updatePasswordSchema.safeParse(req.body);
+    if(!parseddata.success){
+        res.json({
+            message:"invalid input"
+        })
+        return
+    }
+    if(!userId){
+        res.json({
+            message:"you are not signed in"
+        })
+    }
+    const user = await prismaclient.user.findFirst({
+        where:{
+            id:userId
+        }
+    })
+    if(!user ){
+        res.json({
+            message:"cannot find the user" // probably should have a better message
+        })
+        return
+    }
+    const isMatch=await bcrypt.compare(parseddata.data.oldpassword,user?.password)
+    if(!isMatch){
+        res.json({
+            message:"incorrect password"
+        })
+        return
+    }
+    const hashedpaasword=await bcrypt.hash(parseddata.data.newpassword,10)
+    try{
+        await prismaclient.user.update({
+        data:{password:hashedpaasword},
+        where:{id:userId}
+        })
+        res.json({
+            message:"you have succesfully changed the password"
+        })
+    }   
+    catch(e){
+        res.json(e)
+    }
 })
 // userroutes.post("/details",middleware,(req,res)=>{
 //     // description and techstack logic 

@@ -10,3 +10,7 @@ export const SinginSchema=z.object({
     email:z.email(),
     password:z.string()
 })
+export const updatePasswordSchema=z.object({
+    oldpassword:z.string(),
+    newpassword:z.string()
+})
