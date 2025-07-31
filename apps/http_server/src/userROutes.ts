@@ -204,16 +204,42 @@ userroutes.post('/upload_resume', authmiddleware, upload.single('resume'), async
   }
 });
 
-userroutes.put("/profile/update",authmiddleware,(req,res)=>{
-    //logic to change the resume pdf
+userroutes.get("/jobs",authmiddleware,async(req,res)=>{
+    const userId= (req as Authrequest).userId;
+    if(!userId){
+        res.json({
+            message:"you are not signed in"
+        })
+        return
+    }
+    //THink of the working again and fix the database maybr
 })
-userroutes.get("/jobs",authmiddleware,(req,res)=>{
-    //get all the jobs for the dashboard
-})
-userroutes.post("/apply",authmiddleware,(req,res)=>{
+userroutes.post("/apply",authmiddleware,async(req,res)=>{
+    const userId=(req as Authrequest).userId;
+    if(!userId){
+        res.json("you are not signed in")
+    }
     // probalby shouldnt be a post endpoint idk
     //logic to apply
+    //await prismaclient.job.create({
+    //     // data:{
+    //     //     id:userId,
+
+    //     // }
+    //})
 })
-userroutes.get("/applied",authmiddleware,(req,res)=>{
-    //get all the jobs i have applied for
+userroutes.get("/applied",authmiddleware,async(req,res)=>{
+   const userId=(req as Authrequest).userId;
+   if(!userId){
+    res.json({
+        message:"you are not signed in"
+    })
+    return
+   }
+   const data = await prismaclient.user.findMany({
+    where:{
+        id:userId
+    }
+   })
+   res.json(data)
 })
