@@ -4,7 +4,7 @@ import jwt from "jsonwebtoken"
 import { SignupSchema, SinginSchema, updatePasswordSchema } from './types'
 import { prismaclient } from '@repo/db/client'
 import { JWT_SECRET } from '@repo/backend-common/config'
-import { authmiddleware } from './middleware'
+import { authmiddleware, upload } from './middleware'
 export const userroutes:Router=express.Router()
 interface Authrequest extends Request{
     userId:number
@@ -36,8 +36,10 @@ userroutes.post("/signup",async(req,res)=>{
             password:hashedpaasword,
             username:parseddata.data.username,
             resumeUrl:parseddata.data.resume,
-            portfolio:parseddata.data.portfolio
         }
+    })
+    res.json({
+        message:"user created successfully"
     })
 })
 userroutes.post("/signin",async(req,res)=>{
@@ -59,7 +61,7 @@ userroutes.post("/signin",async(req,res)=>{
         })
         return
     }
-    const correctpass=await bcrypt.compare(user.password,parseddata.data.password);
+    const correctpass=await bcrypt.compare(parseddata.data.password,user.password);
     if(!correctpass){
         res.json({
             message:"incorrect password"
@@ -149,8 +151,35 @@ userroutes.get("/profile",authmiddleware,async(req,res)=>{
         //TODO: SHOULD ALSO HAVE THE PROJECTS SHOWING OPTION NEED TO FIGURE THAT OUT SOMEHOW
     })
 })
-userroutes.post("/upload_resume",authmiddleware,(req,res)=>{
-    //multer logic to upload resume
+userroutes.post("/upload_resume",authmiddleware,upload.single('resume'),(req,res)=>{
+    const userId=(req as Authrequest).userId
+    if(!userId){
+        res.json({
+            message:"Unauthorized"
+        })
+        return
+    }
+    if(!req.file){
+        res.json({
+            message:"No file uploaded"
+        })
+        return
+    }
+    const resumeUrl=`http://localhost:3000/uploads/${req.file.filename}`
+    prismaclient.user.update({
+        where:{id:userId},
+        data:{resumeUrl:resumeUrl}
+    }).then(()=>{
+        res.json({
+            message:"Resume uploaded successfully",
+            resumeUrl:resumeUrl
+        })
+    }).catch((err)=>{
+        res.json({
+            message:"Error uploading resume",
+            error:err.message
+        })
+    })
 })
 userroutes.put("/profile/update",authmiddleware,(req,res)=>{
     //logic to change the resume pdf
