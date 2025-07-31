@@ -1,10 +1,13 @@
 import express, { Request, Router } from 'express'
 import bcrypt from 'bcrypt'
+import * as fs from "fs"
+import path from 'path'
 import jwt from "jsonwebtoken"
 import { SignupSchema, SinginSchema, updatePasswordSchema } from './types'
 import { prismaclient } from '@repo/db/client'
-import { JWT_SECRET } from '@repo/backend-common/config'
+import { JWT_SECRET } from './config'
 import { authmiddleware, upload } from './middleware'
+import { uploadCouldinary } from './cloudinary'
 export const userroutes:Router=express.Router()
 interface Authrequest extends Request{
     userId:number
@@ -151,36 +154,56 @@ userroutes.get("/profile",authmiddleware,async(req,res)=>{
         //TODO: SHOULD ALSO HAVE THE PROJECTS SHOWING OPTION NEED TO FIGURE THAT OUT SOMEHOW
     })
 })
-userroutes.post("/upload_resume",authmiddleware,upload.single('resume'),(req,res)=>{
-    const userId=(req as Authrequest).userId
-    if(!userId){
-        res.json({
-            message:"Unauthorized"
-        })
-        return
+userroutes.post('/upload_resume', authmiddleware, upload.single('resume'), async (req, res) => {
+  const userId = (req as Authrequest).userId;
+
+  if (!userId) return res.status(401).json({ message: "Unauthorized" });
+  if (!req.file) return res.status(400).json({ message: "No file uploaded" });
+
+  console.log("File received:", {
+    originalname: req.file.originalname,
+    path: req.file.path,
+    size: req.file.size,
+    mimetype: req.file.mimetype
+  });
+
+  try {
+    // Upload file to Cloudinary
+    const cloudinaryResponse = await uploadCouldinary(req.file.path);
+    
+    if (!cloudinaryResponse) {
+      console.error("Cloudinary upload failed - no response returned");
+      return res.status(500).json({ message: "Failed to upload file to Cloudinary" });
     }
-    if(!req.file){
-        res.json({
-            message:"No file uploaded"
-        })
-        return
+
+    // Update user's resume URL in database
+    await prismaclient.user.update({
+      where: { id: userId },
+      data: { resumeUrl: cloudinaryResponse.secure_url }
+    });
+
+    // Clean up local file
+    fs.unlinkSync(req.file.path);
+
+    res.json({
+      message: "Resume uploaded successfully",
+      resumeUrl: cloudinaryResponse.secure_url
+    });
+
+  } catch (error) {
+    // Clean up local file if it exists
+    if (req.file && fs.existsSync(req.file.path)) {
+      fs.unlinkSync(req.file.path);
     }
-    const resumeUrl=`http://localhost:3000/uploads/${req.file.filename}`
-    prismaclient.user.update({
-        where:{id:userId},
-        data:{resumeUrl:resumeUrl}
-    }).then(()=>{
-        res.json({
-            message:"Resume uploaded successfully",
-            resumeUrl:resumeUrl
-        })
-    }).catch((err)=>{
-        res.json({
-            message:"Error uploading resume",
-            error:err.message
-        })
-    })
-})
+    
+    console.error('Upload error:', error);
+    res.status(500).json({ 
+      message: "Failed to upload resume",
+      error: error instanceof Error ? error.message : "Unknown error"
+    });
+  }
+});
+
 userroutes.put("/profile/update",authmiddleware,(req,res)=>{
     //logic to change the resume pdf
 })
