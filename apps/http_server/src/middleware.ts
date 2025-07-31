@@ -1,10 +1,11 @@
 import { JWT_SECRET } from "@repo/backend-common/config";
+import multer from "multer";
 import { NextFunction, Request, Response } from "express";
 import jwt from "jsonwebtoken"
 interface AuthenticatedRequest extends Request {
   userId?: string;
 }
-export function middleware(req:AuthenticatedRequest,res:Response,next:NextFunction){
+export function authmiddleware(req:AuthenticatedRequest,res:Response,next:NextFunction){
     const token=req.headers["authorization"]??" ";
     const decoded=jwt.verify(token,JWT_SECRET) as {userId : string}
     if (decoded){
@@ -18,3 +19,12 @@ export function middleware(req:AuthenticatedRequest,res:Response,next:NextFuncti
         })
     }
 }
+const storage = multer.diskStorage({
+  destination: function (req, file, cb) {
+    cb(null, './public/uploads/');
+  },
+  filename: function (req, file, cb) {        
+    cb(null, file.originalname);
+  }
+});
+export const upload = multer({ storage: storage });

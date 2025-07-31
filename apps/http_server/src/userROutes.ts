@@ -1,18 +1,17 @@
 import express, { Request, Router } from 'express'
-import { middleware } from './middleware'
 import bcrypt from 'bcrypt'
 import jwt from "jsonwebtoken"
 import { SignupSchema, SinginSchema, updatePasswordSchema } from './types'
 import { prismaclient } from '@repo/db/client'
 import { JWT_SECRET } from '@repo/backend-common/config'
-import { email } from 'zod'
+import { authmiddleware } from './middleware'
 export const userroutes:Router=express.Router()
 interface Authrequest extends Request{
     userId:number
 }
 userroutes.post("/signup",async(req,res)=>{
     const parseddata=SignupSchema.safeParse(req.body)
-    if(!parseddata.success){
+    if(!parseddata.success){ 
         res.json({
             message:"invalid credentials"
         })
@@ -75,7 +74,7 @@ userroutes.post("/signin",async(req,res)=>{
     })
 })
 
-userroutes.put("/changepassword",middleware,async(req,res)=>{
+userroutes.put("/changepassword",authmiddleware,async(req,res)=>{
     const userId= (req as Authrequest).userId 
     const parseddata=updatePasswordSchema.safeParse(req.body);
     if(!parseddata.success){
@@ -121,11 +120,11 @@ userroutes.put("/changepassword",middleware,async(req,res)=>{
         res.json(e)
     }
 })
-// userroutes.post("/details",middleware,(req,res)=>{
+// userroutes.post("/details",authmiddleware,(req,res)=>{
 //     // description and techstack logic 
 //     //***should merge with signup endpoint or change the db */
 // })
-userroutes.get("/profile",middleware,async(req,res)=>{
+userroutes.get("/profile",authmiddleware,async(req,res)=>{
     const userId=(req as Authrequest).userId    
     if(!userId){
         res.json({
@@ -150,19 +149,19 @@ userroutes.get("/profile",middleware,async(req,res)=>{
         //TODO: SHOULD ALSO HAVE THE PROJECTS SHOWING OPTION NEED TO FIGURE THAT OUT SOMEHOW
     })
 })
-userroutes.post("/upload_resume",middleware,(req,res)=>{
+userroutes.post("/upload_resume",authmiddleware,(req,res)=>{
     //multer logic to upload resume
 })
-userroutes.put("/profile/update",middleware,(req,res)=>{
+userroutes.put("/profile/update",authmiddleware,(req,res)=>{
     //logic to change the resume pdf
 })
-userroutes.get("/jobs",middleware,(req,res)=>{
+userroutes.get("/jobs",authmiddleware,(req,res)=>{
     //get all the jobs for the dashboard
 })
-userroutes.post("/apply",middleware,(req,res)=>{
+userroutes.post("/apply",authmiddleware,(req,res)=>{
     // probalby shouldnt be a post endpoint idk
     //logic to apply
 })
-userroutes.get("/applied",middleware,(req,res)=>{
+userroutes.get("/applied",authmiddleware,(req,res)=>{
     //get all the jobs i have applied for
 })
