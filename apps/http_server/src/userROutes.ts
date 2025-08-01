@@ -1,14 +1,14 @@
 import express, { Request, Router } from 'express'
 import bcrypt from 'bcrypt'
 import * as fs from "fs"
-import path from 'path'
+
 import jwt from "jsonwebtoken"
-import { SignupSchema, SinginSchema, updatePasswordSchema, ExternalJob, FormattedJob } from './types'
+import { SignupSchema, SinginSchema, updatePasswordSchema } from './types'
 import { prismaclient } from '@repo/db/client'
 import { JWT_SECRET } from './config'
 import { authmiddleware, upload } from './middleware'
 import { uploadCouldinary } from './cloudinary'
-import axios from 'axios'
+
 export const userroutes:Router=express.Router()
 interface Authrequest extends Request{
     userId:number
@@ -40,6 +40,16 @@ userroutes.post("/signup",async(req,res)=>{
             password:hashedpaasword,
             username:parseddata.data.username,
             resumeUrl:parseddata.data.resume,
+            phoneNumber:parseddata.data.phoneNumber,
+
+
+            location:parseddata.data.location,
+
+            
+            linkedIn:parseddata.data.linkedIn,
+
+            github:parseddata.data.github,
+            consent:parseddata.data.consent
         }
     })
     res.json({
@@ -141,18 +151,32 @@ userroutes.get("/profile",authmiddleware,async(req,res)=>{
     const user = await prismaclient.user.findFirst({
         where:{
             id:userId
+        },
+        include: {
+            projects: {
+                include: {
+                    techStacks: true
+                }
+            }
         }
     })
     if(!user){
         res.json({
             message:"You are not Signed in"
         })
+        return
     }
     res.json({
         username:user?.username,
         email:user?.email,
-        portfolio:user?.portfolio
-        //TODO: SHOULD ALSO HAVE THE PROJECTS SHOWING OPTION NEED TO FIGURE THAT OUT SOMEHOW
+        portfolio:user?.portfolio,
+        resumeUrl:user?.resumeUrl,
+        phoneNumber:user?.phoneNumber,
+        location:user?.location,
+        linkedIn:user?.linkedIn,
+        github:user?.github,
+        consent:user?.consent,
+        projects: user?.projects
     })
 })
 userroutes.post('/upload_resume', authmiddleware, upload.single('resume'), async (req, res) => {
@@ -205,3 +229,52 @@ userroutes.post('/upload_resume', authmiddleware, upload.single('resume'), async
   }
 });
 
+userroutes.post('/upload_portfolio', authmiddleware, upload.single('portfolio'), async (req, res) => {
+  const userId = (req as Authrequest).userId;
+
+  if (!userId) return res.status(401).json({ message: "Unauthorized" });
+  if (!req.file) return res.status(400).json({ message: "No file uploaded" });
+
+  console.log("Portfolio file received:", {
+    originalname: req.file.originalname,
+    path: req.file.path,
+    size: req.file.size,
+    mimetype: req.file.mimetype
+  });
+
+  try {
+    // Upload file to Cloudinary
+    const cloudinaryResponse = await uploadCouldinary(req.file.path);
+    
+    if (!cloudinaryResponse) {
+      console.error("Cloudinary upload failed - no response returned");
+      return res.status(500).json({ message: "Failed to upload file to Cloudinary" });
+    }
+
+    // Update user's portfolio URL in database
+    await prismaclient.user.update({
+      where: { id: userId },
+      data: { portfolio: cloudinaryResponse.secure_url }
+    });
+
+    // Clean up local file
+    fs.unlinkSync(req.file.path);
+
+    res.json({
+      message: "Portfolio uploaded successfully",
+      portfolioUrl: cloudinaryResponse.secure_url
+    });
+
+  } catch (error) {
+    // Clean up local file if it exists
+    if (req.file && fs.existsSync(req.file.path)) {
+      fs.unlinkSync(req.file.path);
+    }
+    
+    console.error('Portfolio upload error:', error);
+    res.status(500).json({ 
+      message: "Failed to upload portfolio",
+      error: error instanceof Error ? error.message : "Unknown error"
+    });
+  }
+});

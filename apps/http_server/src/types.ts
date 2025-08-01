@@ -3,7 +3,12 @@ export const SignupSchema=z.object({
     username:z.string().max(50),
     password:z.string(),
     email:z.email(),
-    resume:z.string()
+    resume:z.string().optional(),
+    phoneNumber:z.string().optional(),
+    location:z.string().optional(),
+    linkedIn:z.string().optional(),
+    github:z.string().optional(),
+    consent:z.boolean().default(false)
 })
 export const SinginSchema=z.object({
     email:z.email(),

@@ -1,4 +1,5 @@
 import express, { Router } from 'express'
+import puppeteer from 'puppeteer';
 import { authmiddleware } from './middleware';
 import { ExternalJob } from './types';
 import { prismaclient } from '@repo/db/client';
@@ -38,6 +39,28 @@ jobroutes.post("/apply",authmiddleware,async(req,res)=>{
             message:"you are not signed in"
         })
     }
+    const browser = await puppeteer.launch();
+    const page = await browser.newPage();
+    await page.goto(req.body.url);//need to find a way to get the url from the job object in the above endpoint
+
+    const user=await prismaclient.user.findFirst({
+        where:{
+            id:userId
+        }
+    })
+    if(!user){  
+        res.json({
+            message:"user not found"
+        })
+        return
+    }
+    await page.type('input[name="name"]', user.username);
+    await page.type('input[name="email"]', user.email);
+    const fileInput = await page.$('input[type="file"]');
+    //need to fix this
+    // await fileInput.uploadFile('/path/to/resume.pdf');
+    // await page.click('button[type="submit"]');
+    // await browser.close();
     
 })
 jobroutes.get("/applied",authmiddleware,async(req,res)=>{

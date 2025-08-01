@@ -13,12 +13,18 @@ model User {
   password   String
   resumeUrl  String?
   portfolio  String?
+  phoneNumber String?    @unique
+  location   String?
+  linkedIn   String?
+  github     String?
+  consent    Boolean     @default(false)
+  
   projects   Project[]
   techStacks TechStack[] 
   jobs       Job[]       @relation("UserJobs")
 }
 
-model Job {
+model Job {   
   id          Int         @id @default(autoincrement())
   title       String
   description String
