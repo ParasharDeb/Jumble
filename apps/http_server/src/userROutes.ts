@@ -3,11 +3,12 @@ import bcrypt from 'bcrypt'
 import * as fs from "fs"
 import path from 'path'
 import jwt from "jsonwebtoken"
-import { SignupSchema, SinginSchema, updatePasswordSchema } from './types'
+import { SignupSchema, SinginSchema, updatePasswordSchema, ExternalJob, FormattedJob } from './types'
 import { prismaclient } from '@repo/db/client'
 import { JWT_SECRET } from './config'
 import { authmiddleware, upload } from './middleware'
 import { uploadCouldinary } from './cloudinary'
+import axios from 'axios'
 export const userroutes:Router=express.Router()
 interface Authrequest extends Request{
     userId:number
@@ -214,19 +215,25 @@ userroutes.get("/jobs",authmiddleware,async(req,res)=>{
     }
     //THink of the working again and fix the database maybr
 })
-userroutes.post("/apply",authmiddleware,async(req,res)=>{
+userroutes.get("/jobs",authmiddleware,async(req,res)=>{
+    //gets all the jobs
     const userId=(req as Authrequest).userId;
     if(!userId){
         res.json("you are not signed in")
     }
-    // probalby shouldnt be a post endpoint idk
-    //logic to apply
-    //await prismaclient.job.create({
-    //     // data:{
-    //     //     id:userId,
-
-    //     // }
-    //})
+    const response = await axios.get("https://www.arbeitnow.com/api/job-board-api")
+    const jobsdata=response.data.data;
+    const formattedJobs = jobsdata.filter((job: ExternalJob) => job.title && job.company_name && job.url) 
+    .map((job: ExternalJob): FormattedJob => ({
+      title: job.title,
+      company: job.company_name,
+      location: job.location,
+      isRemote: job.remote,
+      applyUrl: job.url,
+      tags: job.tags,
+      datePosted: job.created_at 
+    }))
+    res.json(formattedJobs)
 })
 userroutes.get("/applied",authmiddleware,async(req,res)=>{
    const userId=(req as Authrequest).userId;

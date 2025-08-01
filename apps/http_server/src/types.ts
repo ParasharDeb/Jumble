@@ -13,3 +13,24 @@ export const updatePasswordSchema=z.object({
     oldpassword:z.string(),
     newpassword:z.string()
 })
+
+// Type for external job data from arbeitnow.com API
+export interface ExternalJob {
+  title: string;
+  company_name: string;
+  location: string;
+  remote: boolean;
+  url: string;
+  tags: string[];
+  created_at: string;
+}
+
+export interface FormattedJob {
+  title: string;
+  company: string;
+  location: string;
+  isRemote: boolean;
+  applyUrl: string;
+  tags: string[];
+  datePosted: string;
+}

@@ -20,9 +20,6 @@ importers:
 
   apps/http_server:
     dependencies:
-      '@repo/backend-common':
-        specifier: workspace:*
-        version: link:../../packages/backend-common
       '@repo/db':
         specifier: workspace:*
         version: link:../../packages/db
@@ -112,18 +109,6 @@ importers:
         specifier: 5.8.2
         version: 5.8.2
 
-  packages/backend-common:
-    dependencies:
-      '@repo/typescript-config':
-        specifier: workspace:*
-        version: link:../typescript-config
-      dotenv:
-        specifier: ^17.2.0
-        version: 17.2.0
-      typescript:
-        specifier: ^5.8.3
-        version: 5.8.3
-
   packages/db:
     dependencies:
       '@prisma/client':
@@ -205,18 +190,6 @@ importers:
       typescript:
         specifier: 5.8.2
         version: 5.8.2
-
-  packages/utils:
-    dependencies:
-      '@repo/typescript-config':
-        specifier: workspace:*
-        version: link:../typescript-config
-      '@types/node':
-        specifier: ^22.15.3
-        version: 22.15.3
-      cloudinary:
-        specifier: ^2.7.0
-        version: 2.7.0
 
 packages:
 
