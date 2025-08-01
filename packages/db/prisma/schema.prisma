@@ -12,12 +12,12 @@ model User {
   lastname   String
   email      String      @unique
   password   String
-  resumeUrl  String?
-  portfolio  String?
-  phoneNumber String?    @unique
-  location   String?
-  linkedIn   String?
-  github     String?
+  resumeUrl  String
+  portfolio  String
+  phoneNumber String    @unique
+  location   String
+  linkedIn   String
+  github     String
   consent    Boolean     @default(false)
   
   projects   Project[]
