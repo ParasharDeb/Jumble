@@ -1,9 +1,10 @@
 import z from "zod"
 export const SignupSchema=z.object({
-    username:z.string().max(50),
+    firstname:z.string().max(50),
+    lastname:z.string().max(10),
     password:z.string(),
     email:z.email(),
-    resume:z.string().optional(),
+    portfolio:z.string().optional(),
     phoneNumber:z.string().optional(),
     location:z.string().optional(),
     linkedIn:z.string().optional(),

@@ -38,16 +38,12 @@ userroutes.post("/signup",async(req,res)=>{
         data:{
             email:parseddata.data.email,
             password:hashedpaasword,
-            username:parseddata.data.username,
-            resumeUrl:parseddata.data.resume,
+            firstname:parseddata.data.firstname,
+            lastname:parseddata.data.lastname,
+            portfolio:parseddata.data.portfolio,
             phoneNumber:parseddata.data.phoneNumber,
-
-
             location:parseddata.data.location,
-
-            
             linkedIn:parseddata.data.linkedIn,
-
             github:parseddata.data.github,
             consent:parseddata.data.consent
         }
@@ -136,10 +132,6 @@ userroutes.put("/changepassword",authmiddleware,async(req,res)=>{
         res.json(e)
     }
 })
-// userroutes.post("/details",authmiddleware,(req,res)=>{
-//     // description and techstack logic 
-//     //***should merge with signup endpoint or change the db */
-// })
 userroutes.get("/profile",authmiddleware,async(req,res)=>{
     const userId=(req as Authrequest).userId    
     if(!userId){
@@ -167,7 +159,8 @@ userroutes.get("/profile",authmiddleware,async(req,res)=>{
         return
     }
     res.json({
-        username:user?.username,
+        firstname:user?.firstname,
+        lastname:user.lastname,
         email:user?.email,
         portfolio:user?.portfolio,
         resumeUrl:user?.resumeUrl,
