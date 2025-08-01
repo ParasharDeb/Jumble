@@ -18,6 +18,7 @@ export function authmiddleware(req:AuthenticatedRequest,res:Response,next:NextFu
             message:"user unauthorized"
         })
     }
+    console.log(req.userId)
 }
 const storage = multer.diskStorage({
   destination: function (req, file, cb) {
